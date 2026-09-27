@@ -1,0 +1,33 @@
+services:
+  backend:
+    build: ./backend
+    container_name: doorsteps-api
+    environment:
+      DATABASE_URL: sqlite:///./data/doorsteps.db
+      CORS_ORIGINS: "http://localhost:3400,http://127.0.0.1:3400"
+    volumes:
+      - api-data:/app/data
+    ports:
+      - "8140:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # baked into the client bundle: the URL the *browser* uses
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8140}
+    container_name: doorsteps-web
+    environment:
+      # used by server components inside the compose network
+      API_URL: http://backend:8000
+      NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8140}
+    ports:
+      - "3400:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  api-data:
